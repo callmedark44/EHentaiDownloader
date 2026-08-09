@@ -60,6 +60,7 @@ def fetch_with_retries(
                 if http_err.response is not None
                 else 0
             )
+
             if status_code in (429, 509):
                 live_manager.update_log(
                     "Rate limit",
@@ -68,6 +69,7 @@ def fetch_with_retries(
                 )
                 time.sleep(RATE_LIMIT_SLEEPING_TIME)
                 continue
+
             else:
                 live_manager.update_log(
                     "Request failed",
