@@ -18,10 +18,9 @@ SESSION_LOG = "session.log"    # The file where session logs will be recorded.
 # ============================
 KB = 1024             # Number of bytes in a kilobyte.
 CHUNK_SIZE = 16 * KB  # The size of each chunk when downloading files.
-MAX_WORKERS = 5       # The number of concurrent image downloads.
 
 # ============================
-# Regex
+# HTTP / Network
 # ============================
 NL_VALUE_PATTERN = r"nl\('([^']+)'\)"
 

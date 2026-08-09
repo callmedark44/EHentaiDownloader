@@ -8,7 +8,6 @@ refresh of the live view.
 from __future__ import annotations
 
 import datetime
-import threading
 import time
 from typing import TYPE_CHECKING
 
@@ -37,7 +36,6 @@ class LiveManager:
         self.progress_manager = progress_manager
         self.progress_table = self.progress_manager.create_progress_table()
         self.logger = logger
-        self._lock = threading.Lock()
         self.live = Live(
             self._render_live_view(),
             refresh_per_second=refresh_per_second,
@@ -65,9 +63,8 @@ class LiveManager:
 
     def update_log(self, event: str, details: str) -> None:
         """Log an event and refreshes the live display."""
-        with self._lock:
-            self.logger.log(event, details)
-            self.live.update(self._render_live_view())
+        self.logger.log(event, details)
+        self.live.update(self._render_live_view())
 
     def start(self) -> None:
         """Start the live display."""
