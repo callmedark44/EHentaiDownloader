@@ -55,22 +55,42 @@ class Crawler:
         )
         return album_pages_soups
 
+    def get_reloaded_page(self, picture_page: str) -> str | None:
+        """Generate reloaded image page URL for a single picture page."""
+        try:
+            soup = fetch_page(picture_page)
+            nl_container = soup.find("a", {"id": "loadfail", "onclick": True})
+            if not nl_container or "onclick" not in nl_container.attrs:
+                self.live_manager.update_log(
+                    "Missing 'nl' container",
+                    f"No 'loadfail' link with 'onclick' found for {picture_page}.",
+                )
+                return None
+
+            match = re.search(r"nl\('([^']+)'\)", nl_container["onclick"])
+            if not match:
+                self.live_manager.update_log(
+                    "Missing 'nl' value",
+                    f"No 'nl' value found in onclick for {picture_page}.",
+                )
+                return None
+
+            nl_value = match.group(1)
+            return generate_reloaded_page(picture_page, nl_value)
+        except Exception as err:
+            self.live_manager.update_log(
+                "Crawler error",
+                f"Error getting reloaded page for {picture_page}: {err}",
+            )
+            return None
+
     def get_reloaded_pages(self, picture_pages: list[str]) -> list[str]:
         """Generate reloaded image page URLs."""
         reloaded_pages = []
         for picture_page in picture_pages:
-            soup = fetch_page(picture_page)
-            nl_container = soup.find("a", {"id": "loadfail", "onclick": True})
-            nl_value = re.search(r"nl\('([^']+)'\)", nl_container["onclick"]).group(1)
-
-            if nl_value:
-                reloaded_page = generate_reloaded_page(picture_page, nl_value)
+            reloaded_page = self.get_reloaded_page(picture_page)
+            if reloaded_page:
                 reloaded_pages.append(reloaded_page)
-            else:
-                self.live_manager.update_log(
-                    "Missing 'nl' value", f"No 'nl' value found for {picture_page}.",
-                )
-
         return reloaded_pages
 
     def _generate_album_pages(self) -> list[str]:
@@ -85,8 +105,8 @@ class Crawler:
             return []
 
         page_numbers = []
-        for page in next_pages:
-            href = page.get("href")
+        for next_page in next_pages:
+            href = next_page.get("href")
             if href:
                 match = re.search(r"\?p=(\d+)", href)
                 if match:
