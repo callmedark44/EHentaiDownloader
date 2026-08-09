@@ -6,21 +6,16 @@ tracking.
 """
 
 import random
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
 from requests import Response, Session
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-from src.config import (
-    CHUNK_SIZE,
-    HTTP_RATE_LIMIT,
-    MAX_WORKERS,
-    RATE_LIMIT_SLEEPING_TIME,
-)
+from src.config import CHUNK_SIZE, MAX_WORKERS
 from src.crawler.crawler import Crawler
 from src.crawler.crawler_utils import get_picture_pages
 from src.file_utils import create_download_directory, write_on_session_log
@@ -111,7 +106,6 @@ class AlbumDownloader:
         task = self.live_manager.add_task(current_task=current_task, total=num_pictures)
 
         # Thread lock for safely appending to failed_downloads list
-        import threading
         failed_lock = threading.Lock()
 
         def download_worker(picture_page: str) -> None:
@@ -141,7 +135,7 @@ class AlbumDownloader:
                     self.live_manager.update_task(task, advance=1)
                     return
 
-                download_link = download_link_container["src"]
+                download_link = download_link_container.get("src")
 
             except Exception as err:
                 self.live_manager.update_log(

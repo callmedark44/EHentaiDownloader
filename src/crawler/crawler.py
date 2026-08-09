@@ -4,15 +4,21 @@ This module provides the `Crawler` class, which is responsible for parsing album
 extracting image links, and handling reloaded pages.
 """
 
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup
-
+from src.config import NL_VALUE_PATTERN
 from src.general_utils import fetch_page
-from src.managers.live_manager import LiveManager
 
 from .crawler_utils import generate_reloaded_page
+
+if TYPE_CHECKING:
+    from bs4 import BeautifulSoup
+
+    from src.managers.live_manager import LiveManager
 
 
 class Crawler:
@@ -67,7 +73,7 @@ class Crawler:
                 )
                 return None
 
-            match = re.search(r"nl\('([^']+)'\)", nl_container["onclick"])
+            match = re.search(NL_VALUE_PATTERN, nl_container.get(["onclick"]))
             if not match:
                 self.live_manager.update_log(
                     "Missing 'nl' value",
@@ -77,6 +83,7 @@ class Crawler:
 
             nl_value = match.group(1)
             return generate_reloaded_page(picture_page, nl_value)
+
         except Exception as err:
             self.live_manager.update_log(
                 "Crawler error",
@@ -91,6 +98,7 @@ class Crawler:
             reloaded_page = self.get_reloaded_page(picture_page)
             if reloaded_page:
                 reloaded_pages.append(reloaded_page)
+
         return reloaded_pages
 
     def _generate_album_pages(self) -> list[str]:
@@ -116,5 +124,4 @@ class Crawler:
             return []
 
         last_page = max(page_numbers)
-        album_pages = [f"{self.url}?p={page}" for page in range(1, last_page + 1)]
-        return album_pages
+        return [f"{self.url}?p={page}" for page in range(1, last_page + 1)]

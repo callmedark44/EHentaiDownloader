@@ -3,10 +3,11 @@
 It uses the Rich library to create dynamic, formatted progress bars and tables for
 monitoring task completion.
 """
+
 from __future__ import annotations
 
-from collections import deque
 import threading
+from collections import deque
 
 from rich.panel import Panel
 from rich.progress import (
@@ -16,6 +17,8 @@ from rich.progress import (
     TextColumn,
 )
 from rich.table import Column, Table
+
+_COLOR = "light_cyan3"
 
 
 class ProgressManager:
@@ -28,13 +31,11 @@ class ProgressManager:
         self,
         task_name: str,
         item_description: str,
-        color: str = "light_cyan3",
         overall_buffer_size: int = 5,
     ) -> None:
         """Initialize a progress tracking system for a specific task."""
         self.task_name = task_name
         self.item_description = item_description
-        self.color = color
         self.overall_progress = self._create_progress_bar()
         self.task_progress = self._create_progress_bar()
         self.num_tasks = 0
@@ -46,7 +47,7 @@ class ProgressManager:
         self.num_tasks = num_tasks
         overall_description = self._adjust_description(description)
         self.overall_progress.add_task(
-            f"[{self.color}]{overall_description}",
+            f"[{_COLOR}]{overall_description}",
             total=num_tasks,
             completed=0,
         )
@@ -54,7 +55,7 @@ class ProgressManager:
     def add_task(self, current_task: int = 0, total: int = 100) -> int:
         """Add an individual task to the task progress bar."""
         task_description = (
-            f"[{self.color}]{self.item_description} "
+            f"[{_COLOR}]{self.item_description} "
             f"{current_task + 1}/{self.num_tasks}"
         )
         return self.task_progress.add_task(task_description, total=total)
@@ -83,14 +84,14 @@ class ProgressManager:
         progress_table.add_row(
             Panel.fit(
                 self.overall_progress,
-                title=f"[bold {self.color}]Overall Progress",
+                title=f"[bold {_COLOR}]Overall Progress",
                 border_style="bright_blue",
                 padding=(1, 1),
                 width=40,
             ),
             Panel.fit(
                 self.task_progress,
-                title=f"[bold {self.color}]{self.task_name} Progress",
+                title=f"[bold {_COLOR}]{self.task_name} Progress",
                 border_style="medium_purple",
                 padding=(1, 1),
                 width=40,

@@ -70,12 +70,11 @@ def fetch_with_retries(
                 time.sleep(RATE_LIMIT_SLEEPING_TIME)
                 continue
 
-            else:
-                live_manager.update_log(
-                    "Request failed",
-                    f"HTTP error {status_code} for {url}: {http_err}",
-                )
-                break
+            live_manager.update_log(
+                "Request failed",
+                f"HTTP error {status_code} for {url}: {http_err}",
+            )
+            break
 
         except ConnectTimeout as conn_timeout:
             live_manager.update_log(
@@ -104,7 +103,8 @@ def fetch_with_retries(
         if attempt < retries - 1:
             live_manager.update_log(
                 "Fetch attempt failed",
-                f"Fetch attempt failed for {url}. Retrying ({attempt + 1}/{retries})...",
+                f"Fetch attempt failed for {url}. "
+                "Retrying ({attempt + 1}/{retries})...",
             )
             delay = 2 ** (attempt + 1) + random.uniform(1, 2)  # noqa: S311
             time.sleep(delay)
