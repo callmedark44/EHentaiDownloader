@@ -129,6 +129,7 @@ class AlbumDownloader:
             try:
                 soup = fetch_page(reloaded_page)
                 download_link_container = soup.find("img", {"id": "img", "src": True})
+
                 if not download_link_container:
                     self.live_manager.update_log(
                         "Image not found",
@@ -136,9 +137,12 @@ class AlbumDownloader:
                     )
                     with failed_lock:
                         failed_downloads.append(picture_page)
+
                     self.live_manager.update_task(task, advance=1)
                     return
+
                 download_link = download_link_container["src"]
+
             except Exception as err:
                 self.live_manager.update_log(
                     "Page fetch error",
@@ -146,6 +150,7 @@ class AlbumDownloader:
                 )
                 with failed_lock:
                     failed_downloads.append(picture_page)
+
                 self.live_manager.update_task(task, advance=1)
                 return
 
@@ -165,6 +170,7 @@ class AlbumDownloader:
                 )
                 with failed_lock:
                     failed_downloads.append(download_link)
+
                 write_on_session_log(download_link)
                 self.live_manager.update_task(task, advance=1)
                 return
@@ -180,9 +186,11 @@ class AlbumDownloader:
                 executor.submit(download_worker, picture_page)
                 for picture_page in picture_pages
             ]
+
             for future in as_completed(futures):
                 try:
                     future.result()
+
                 except Exception as err:
                     self.live_manager.update_log(
                         "Worker error",
