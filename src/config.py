@@ -20,7 +20,7 @@ KB = 1024             # Number of bytes in a kilobyte.
 CHUNK_SIZE = 16 * KB  # The size of each chunk when downloading files.
 
 # ============================
-# HTTP / Network
+# Regex
 # ============================
 NL_VALUE_PATTERN = r"nl\('([^']+)'\)"
 
