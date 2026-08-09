@@ -85,8 +85,8 @@ class Crawler:
             return []
 
         page_numbers = []
-        for a in next_pages:
-            href = a.get("href")
+        for page in next_pages:
+            href = page.get("href")
             if href:
                 match = re.search(r"\?p=(\d+)", href)
                 if match:
