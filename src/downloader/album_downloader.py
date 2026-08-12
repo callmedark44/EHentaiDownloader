@@ -15,7 +15,6 @@ from requests import Response, Session
 
 from src.config import (
     CHUNK_SIZE,
-    DOWNLOAD_FOLDER,
     HTTP_RATE_LIMIT,
     RATE_LIMIT_SLEEPING_TIME,
 )
@@ -99,14 +98,16 @@ class AlbumDownloader:
             self.live_manager.update_log("CBZ creation", "No images found to archive")
             return
 
-        cbz_name = f"{self.album_name}.cbz"
-        cbz_path = Path(DOWNLOAD_FOLDER) / cbz_name
+        cbz_path = Path(self.download_path) / f"{self.album_name}.cbz"
 
         with zipfile.ZipFile(cbz_path, "w", zipfile.ZIP_DEFLATED) as cbz:
             for i, img_path in enumerate(image_files):
                 # Use zero-padded index for correct ordering in CBZ
                 arcname = f"{i:03d}{img_path.suffix}"
                 cbz.write(img_path, arcname)
+
+        for img_path in image_files:
+            img_path.unlink()
 
         self.live_manager.update_log(
             "CBZ created", f"Archive saved to {cbz_path}"
