@@ -20,7 +20,7 @@ from src.config import (
 )
 from src.crawler.crawler import Crawler
 from src.crawler.crawler_utils import get_picture_pages
-from src.file_utils import create_download_directory, write_on_session_log
+from src.file_utils import create_download_directory, sanitize_directory_name, write_on_session_log
 from src.general_utils import fetch_page
 from src.managers.live_manager import LiveManager
 
@@ -98,7 +98,7 @@ class AlbumDownloader:
             self.live_manager.update_log("CBZ creation", "No images found to archive")
             return
 
-        cbz_path = Path(self.download_path) / f"{self.album_name}.cbz"
+        cbz_path = Path(self.download_path) / f"{sanitize_directory_name(self.album_name)}.cbz"
 
         with zipfile.ZipFile(cbz_path, "w", zipfile.ZIP_DEFLATED) as cbz:
             for i, img_path in enumerate(image_files):
