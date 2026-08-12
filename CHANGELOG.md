@@ -10,10 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **CBZ archive creation**: after an album finishes downloading, all images are packaged
-  into a `.cbz` comic archive (zero-padded for correct page order) saved in the `Downloads`
-  folder.
-- **Resume support**: already-downloaded images are detected and skipped, so an interrupted
-  run can be restarted without re-downloading the pages it already has.
+  into a `.cbz` comic archive (zero-padded for correct page order). The archive is saved
+  inside the album's own folder and the extracted images are removed afterwards.
+- **CLI album URL**: `python3 main.py <album_url>` downloads a single album directly;
+  the `URLs.txt` batch file is only used (and cleared) when no URL is given.
+
+### Changed
+
+- **Overall progress accuracy**: the overall progress bar now tracks downloaded images
+  against the album's total image count, instead of one tick per finished page.
+- **Resume support**: already-downloaded images are skipped, and downloads write to
+  `.part` temp files first so an interrupted run never fakes a completed image.
+
+### Fixed
+
+- Crash on single-page albums (`next_pages[-2]` IndexError).
+- Crash when an image page lacks the expected `nl` element or download link.
+- Wrong CBZ page order (images were sorted by hash filename instead of download order).
+- CBZ path failing when the album title contains path-hostile characters like `/`.
 
 ## [1.0.1] - 2026-03-19
 
