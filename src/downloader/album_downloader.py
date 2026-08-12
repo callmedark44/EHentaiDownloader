@@ -7,6 +7,7 @@ tracking.
 
 import random
 import time
+import zipfile
 from pathlib import Path
 
 import requests
@@ -14,6 +15,7 @@ from requests import Response, Session
 
 from src.config import (
     CHUNK_SIZE,
+    DOWNLOAD_FOLDER,
     HTTP_RATE_LIMIT,
     RATE_LIMIT_SLEEPING_TIME,
 )
@@ -79,6 +81,31 @@ class AlbumDownloader:
                 )
                 time.sleep(random.uniform(1, 5))  # noqa: S311
 
+        self._create_cbz()
+
+    def _create_cbz(self) -> None:
+        """Create a CBZ archive from downloaded images in order."""
+        image_files = sorted(
+            p for p in Path(self.download_path).glob("*")
+            if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+        )
+        if not image_files:
+            self.live_manager.update_log("CBZ creation", "No images found to archive")
+            return
+
+        cbz_name = f"{self.album_name}.cbz"
+        cbz_path = Path(DOWNLOAD_FOLDER) / cbz_name
+
+        with zipfile.ZipFile(cbz_path, "w", zipfile.ZIP_DEFLATED) as cbz:
+            for i, img_path in enumerate(image_files):
+                # Use zero-padded index for correct ordering in CBZ
+                arcname = f"{i:03d}{img_path.suffix}"
+                cbz.write(img_path, arcname)
+
+        self.live_manager.update_log(
+            "CBZ created", f"Archive saved to {cbz_path}"
+        )
+
     def download_picture(
             self,
             response: Response,
@@ -109,6 +136,12 @@ class AlbumDownloader:
             soup = fetch_page(reloaded_page)
             download_link_container = soup.find("img", {"id": "img", "src": True})
             download_link = download_link_container.get("src")
+            filename = download_link.split("/")[-1]
+
+            final_path = Path(self.download_path) / filename
+            if final_path.is_file():
+                self.live_manager.update_task(task, advance=1)
+                continue
 
             headers = prepare_headers(download_link)
             session.headers.update(headers)
@@ -130,7 +163,6 @@ class AlbumDownloader:
                 )
                 time.sleep(RATE_LIMIT_SLEEPING_TIME)
 
-            filename = download_link.split("/")[-1]
             self.download_picture(response, filename, task)
             time.sleep(random.uniform(1.5, 4.0))  # noqa: S311
 
