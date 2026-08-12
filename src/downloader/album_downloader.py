@@ -47,6 +47,7 @@ class AlbumDownloader:
         )
         self.album_name = self.crawler.get_album_name()
         self.download_path = create_download_directory(self.album_name)
+        self.image_counter = 0
 
     def download_album(self) -> None:
         """Download all images from the album while tracking progress."""
@@ -84,7 +85,7 @@ class AlbumDownloader:
         self._create_cbz()
 
     def _create_cbz(self) -> None:
-        """Create a CBZ archive from downloaded images in order."""
+        """Create a CBZ archive from downloaded images in page order."""
         image_files = sorted(
             p for p in Path(self.download_path).glob("*")
             if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp", ".gif"}
@@ -114,9 +115,11 @@ class AlbumDownloader:
         ) -> None:
         """Save an image response to a file and update the progress."""
         final_path = Path(self.download_path) / filename
-        with Path(final_path).open("wb") as file:
+        temp_path = final_path.with_suffix(final_path.suffix + ".part")
+        with temp_path.open("wb") as file:
             for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
                 file.write(chunk)
+        temp_path.replace(final_path)
 
         self.live_manager.update_task(task, advance=1)
 
@@ -135,11 +138,29 @@ class AlbumDownloader:
         for reloaded_page in reloaded_pages:
             soup = fetch_page(reloaded_page)
             download_link_container = soup.find("img", {"id": "img", "src": True})
+            if download_link_container is None:
+                self.live_manager.update_log(
+                    "Failed download",
+                    f"No image found on {reloaded_page}, check the log file",
+                )
+                failed_downloads.append(reloaded_page)
+                write_on_session_log(reloaded_page)
+                self.image_counter += 1
+                continue
             download_link = download_link_container.get("src")
-            filename = download_link.split("/")[-1]
-
-            final_path = Path(self.download_path) / filename
+            if not download_link:
+                self.live_manager.update_log(
+                    "Failed download",
+                    f"No image found on {reloaded_page}, check the log file",
+                )
+                failed_downloads.append(reloaded_page)
+                write_on_session_log(reloaded_page)
+                self.image_counter += 1
+                continue
+            suffix = Path(download_link.split("/")[-1].split("?")[0]).suffix
+            final_path = Path(self.download_path) / f"{self.image_counter:03d}{suffix}"
             if final_path.is_file():
+                self.image_counter += 1
                 self.live_manager.update_task(task, advance=1)
                 continue
 
@@ -154,6 +175,7 @@ class AlbumDownloader:
                 )
                 failed_downloads.append(download_link)
                 write_on_session_log(download_link)
+                self.image_counter += 1
                 continue
 
             if response.status_code == HTTP_RATE_LIMIT:
@@ -163,7 +185,8 @@ class AlbumDownloader:
                 )
                 time.sleep(RATE_LIMIT_SLEEPING_TIME)
 
-            self.download_picture(response, filename, task)
+            self.download_picture(response, f"{self.image_counter:03d}{suffix}", task)
+            self.image_counter += 1
             time.sleep(random.uniform(1.5, 4.0))  # noqa: S311
 
         return failed_downloads
