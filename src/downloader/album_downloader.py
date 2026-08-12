@@ -54,9 +54,14 @@ class AlbumDownloader:
         album_pages_soups = self.crawler.collect_album_pages_soups()
         session = requests.Session()
         num_pages = len(album_pages_soups)
+        num_images = sum(
+            len(get_picture_pages(soup.find_all("a", {"href": True})))
+            for soup in album_pages_soups
+        )
         self.live_manager.add_overall_task(
             description=self.album_name,
-            num_tasks=num_pages,
+            num_tasks=num_images,
+            num_pages=num_pages,
         )
 
         for current_task, soup in enumerate(album_pages_soups):
